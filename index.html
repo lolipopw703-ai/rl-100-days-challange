@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RL to SSL – 100-Day Challenge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --secondary: #f7931e;
+            --accent: #00d4ff;
+            --success: #4CAF50;
+            --dark: #1a1a1a;
+            --glow: 0 0 15px rgba(255, 107, 53, 0.6);
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            --neon: 0 0 20px rgba(0, 212, 255, 0.8);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+        header {
+            background: linear-gradient(90deg, rgba(255, 107, 53, 0.9), rgba(247, 147, 30, 0.9));
+            text-align: center;
+            padding: 3rem 1rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="30" cy="8" r="1.5" fill="rgba(255,255,255,0.15)"/><circle cx="60" cy="12" r="1" fill="rgba(255,255,255,0.1)"/></svg>') repeat-x;
+            animation: drift 20s linear infinite;
+        }
+        @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-100px); } }
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            text-shadow: 0 0 20px rgba(255, 107, 53, 0.8);
+            margin-bottom: 0.5rem;
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 2;
+        }
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 107, 53, 0.8); }
+            50% { text-shadow: 0 0 30px rgba(255, 107, 53, 1); }
+        }
+        header p { font-size: 1.4rem; opacity: 0.9; position: relative; z-index: 2; }
+
+        /* ===== FIXED NAV BUTTONS ===== */
+        nav {
+            background: rgba(26, 26, 26, 0.95);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 0;
+            padding: 0;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 30px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            display: inline-block;
+        }
+        nav a::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255, 107, 53, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+            z-index: -1;
+        }
+        nav a:hover::after {
+            width: 300%; height: 300%;
+        }
+        nav a:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: var(--glow);
+            border-color: var(--primary);
+        }
+        /* ===== END FIXED NAV ===== */
+
+        main { max-width: 1300px; margin: 2rem auto; padding: 0 1rem; }
+        .section {
+            background: rgba(26, 26, 26, 0.85);
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            transition: transform 0.3s;
+        }
+        .section:hover { transform: translateY(-5px); }
+        h2 {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        h2::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            margin: 0.8rem auto;
+            border-radius: 2px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #f7931e, #00d4ff);
+            width: 0%;
+            border-radius: 20px;
+            transition: width 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+            animation: shine 2s infinite;
+        }
+        @keyframes shine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .progress-fill span {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+        .day-tracker {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 8px;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+        .day-btn {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .day-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .day-btn:hover::before { opacity: 1; }
+        .day-btn.completed {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-color: #388E3C;
+            color: white;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+            animation: bounce 0.5s;
+        }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .day-btn.today {
+            border: 3px solid var(--primary);
+            animation: pulse-border 2s infinite;
+            font-weight: bold;
+        }
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 107, 53, 0); }
+        }
+        .rank-input, .save-btn {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 30px;
+            margin: 0.5rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+        .rank-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 100%;
+            max-width: 300px;
+        }
+        .rank-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+        .save-btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            box-shadow: var(--shadow);
+        }
+        .save-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease;
+            z-index: -1;
+        }
+        .save-btn:hover::after {
+            width: 300%; height: 300%;
+        }
+        .save-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.2), rgba(247, 147, 30, 0.2));
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: scale(1.05);
+            box-shadow: var(--glow);
+        }
+        .stat-card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .stat-card p { font-size: 1.5rem; font-weight: bold; }
+        .phase {
+            background: rgba(40, 40, 40, 0.6);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s;
+        }
+        .phase:hover {
+            background: rgba(50, 50, 50, 0.8);
+            border-left-color: var(--secondary);
+        }
+        .phase h3 { color: var(--accent); margin-bottom: 0.8rem; font-size: 1.5rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: rgba(30, 30, 30, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        td {
+            padding: 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.3s;
+        }
+        tr:hover td { background: rgba(255, 107, 53, 0.1); }
+        .pack-code {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            color: var(--accent);
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .pack-code:hover { background: rgba(0, 212, 255, 0.2); }
+        .notes {
+            background: rgba(30, 30, 30, 0.7);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        .notes textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .tip {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 0.8rem 1rem;
+            margin: 1rem 0;
+            font-style: italic;
+            border-radius: 0 8px 8px 0;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(26, 26, 26, 0.95);
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 3rem;
+        }
+        footer a { color: var(--primary); text-decoration: none; }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .day-tracker { grid-template-columns: repeat(10, 1fr); }
+            nav ul { flex-direction: column; align-items: center; gap: 0.5rem; }
+            nav a { width: 80%; text-align: center; }
+            .stats { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>RL TO SSL</h1>
+        <p>100-Day Challenge • Bronze 1 to Supersonic Legend</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#progress">Progress</a></li>
+            <li><a href="#training">100-Day Plan</a></li>
+            <li><a href="#replay">Replay Guide</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- PROGRESS + RANK -->
+        <section id="progress">
+            <h2>Progress & Rank Tracker</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"><span>0%</span></div>
+            </div>
+            <p><strong>Day <span id="currentDay">1</span> of 100</strong> • <span id="daysLeft">99</span> days left</p>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h4>Current Rank</h4>
+                    <p id="currentRank">Bronze I</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Goal</h4>
+                    <p>SSL</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Completed</h4>
+                    <p><span id="completedDays">0</span>/100</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Streak</h4>
+                    <p id="streakCount">0 days</p>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <label><strong>Update Rank:</strong></label><br>
+                <select id="rankInput" class="rank-input">
+                    <option value="Bronze I">Bronze I</option>
+                    <option value="Bronze II">Bronze II</option>
+                    <option value="Bronze III">Bronze III</option>
+                    <option value="Silver I">Silver I</option>
+                    <option value="Silver II">Silver II</option>
+                    <option value="Silver III">Silver III</option>
+                    <option value="Gold I">Gold I</option>
+                    <option value="Gold II">Gold II</option>
+                    <option value="Gold III">Gold III</option>
+                    <option value="Platinum I">Platinum I</option>
+                    <option value="Platinum II">Platinum II</option>
+                    <option value="Platinum III">Platinum III</option>
+                    <option value="Diamond I">Diamond I</option>
+                    <option value="Diamond II">Diamond II</option>
+                    <option value="Diamond III">Diamond III</option>
+                    <option value="Champion I">Champion I</option>
+                    <option value="Champion II">Champion II</option>
+                    <option value="Champion III">Champion III</option>
+                    <option value="Grand Champion I">Grand Champion I</option>
+                    <option value="Grand Champion II">Grand Champion II</option>
+                    <option value="Grand Champion III">Grand Champion III</option>
+                    <option value="Supersonic Legend">Supersonic Legend</option>
+                </select>
+                <button class="save-btn" onclick="updateRank()">Update Rank</button>
+            </div>
+
+            <h3 style="margin: 2rem 0 1rem;">Mark Days Completed</h3>
+            <div class="day-tracker" id="dayTracker"></div>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <button class="save-btn" onclick="saveProgress()">Save All</button>
+                <button class="save-btn" onclick="resetProgress()" style="background: #666;">Reset</button>
+            </div>
+        </section>
+
+        <!-- 100-DAY TRAINING PLAN -->
+        <section id="training">
+            <h2>100-Day Training Plan</h2>
+            <p style="text-align:center; opacity:0.8; margin-bottom:2rem;">Daily: 30min Freeplay • 30–40min Packs • 40–60min Matches • 1 Replay Review</p>
+
+            <!-- PHASE 1 -->
+            <div class="phase">
+                <h3>Phase 1: Days 1–20 – Master the Basics</h3>
+                <table>
+                    <tr><th>Focus</th><th>Pack Code</th><th>Goal</th></tr>
+                    <tr><td>Ground Control & Boosting</td><td><span class="pack-code">6EB1-79B2-33B8-681C</span></td><td>Hit 100 balls cleanly</td></tr>
+                    <tr><td>Basic Shots</td><td><span class="pack-code">A5A7-2D1F-7B5A-4C3E</span></td><td>Score 15/20</td></tr>
+                    <tr><td>Wall Hits</td><td><span class="pack-code">1F2A-3B4C-5D6E-7F8A</span></td><td>50% accuracy</td></tr>
+                </table>
+                <div class="tip">Tip: Focus on speed, not power. Smooth boost = faster recovery.</div>
+            </div>
+
+            <!-- PHASE 2 -->
+            <div class="phase">
+                <h3>Phase 2: Days 21–40 – Aerials & Air Dribbles</h3>
+                <table>
+                    <tr><th>Focus</th><th>Pack Code</th><th>Goal</th></tr>
+                    <tr><td>Basic Aerials</td><td><span class="pack-code">8B9C-1D2E-3F4A-5B6C</span></td><td>Hit 20/25</td></tr>
+                    <tr><td>Air Dribble Setup</td><td><span class="pack-code">C3D4-E5F6-A7B8-C9D0</span></td><td>Carry to backboard</td></tr>
+                    <tr><td>Double Taps</td><td><span class="pack-code">9A1B-2C3D-4E5F-6A7B</span></td><td>Score 10</td></tr>
+                </table>
+                <div class="tip">Tip: Fast aerial = jump + boost immediately. Practice in Freeplay.</div>
+            </div>
+
+            <!-- PHASE 3 -->
+            <div class="phase">
+                <h3>Phase 3: Days 41–60 – Defense & Rotation</h3>
+                <table>
+                    <tr><th>Focus</th><th>Pack Code</th><th>Goal</th></tr>
+                    <tr><td>Shadow Defense</td><td><span class="pack-code">F1A2-B3C4-D5E6-F7A8</span></td><td>Block 15/20</td></tr>
+                    <tr><td>Back Post Rotations</td><td><span class="pack-code">A9B8-C7D6-E5F4-A3B2</span></td><td>Never out of position</td></tr>
+                    <tr><td>50/50s</td><td><span class="pack-code">1A2B-3C4D-5E6F-7A8B</span></td><td>Win 70%</td></tr>
+                </table>
+                <div class="tip">Tip: Stay between ball and goal. Fake challenge → recover boost.</div>
+            </div>
+
+            <!-- PHASE 4 -->
+            <div class="phase">
+                <h3>Phase 4: Days 61–80 – Advanced Mechanics</h3>
+                <table>
+                    <tr><th>Focus</th><th>Pack Code</th><th>Goal</th></tr>
+                    <tr><td>Ceiling Shots</td><td><span class="pack-code">B2C3-D4E5-F6A7-B8C9</span></td><td>Score 5/10</td></tr>
+                    <tr><td>Flip Resets</td><td><span class="pack-code">9F8E-7D6C-5B4A-3F2E</span></td><td>Get 1 reset + shot</td></tr>
+                    <tr><td>Wave Dash Recovery</td><td><span class="pack-code">E1D2-C3B4-A5F6-E7D8</span></td><td>Recover in 1.5s</td></tr>
+                </table>
+                <div class="tip">Tip: Mechanics win at Champ+. Consistency > flashy plays.</div>
+            </div>
+
+            <!-- PHASE 5 -->
+            <div class="phase">
+                <h3>Phase 5: Days 81–100 – SSL Mindset</h3>
+                <table>
+                    <tr><th>Focus</th><th>Pack Code</th><th>Goal</th></tr>
+                    <tr><td>Pro Replays</td><td><a href="https://ballchasing.com" target="_blank" style="color:var(--accent);">Ballchasing.com</a></td><td>Watch 1 SSL replay/day</td></tr>
+                    <tr><td>1v1 & 2v2</td><td>Ranked Only</td><td>Win 60% of games</td></tr>
+                    <tr><td>Review Every Loss</td><td>Take Notes Below</td><td>Write 3 mistakes</td></tr>
+                </table>
+                <div class="tip">Tip: SSL is 90% game sense. Adapt. Control midfield.</div>
+            </div>
+        </section>
+
+        <!-- REPLAY GUIDE + NOTES -->
+        <section id="replay">
+            <h2>How to Analyze Replays & Take Notes</h2>
+            <div class="notes">
+                <h4>Step-by-Step Replay Review</h4>
+                <ol>
+                    <li><strong>Save Replay:</strong> After ranked → Save Replay</li>
+                    <li><strong>Watch in 0.25x Speed</strong></li>
+                    <li><strong>Ask:</strong>
+                        <ul>
+                            <li>What did I do wrong on defense?</li>
+                            <li>Where was I out of position?</li>
+                            <li>Did I waste boost or overcommit?</li>
+                        </ul>
+                    </li>
+                    <li><strong>Write It Below → Fix in Next Game</strong></li>
+                </ol>
+                <div class="tip">Pro Tip: Review 1 loss > 10 wins. Fix mistakes = rank up.</div>
+            </div>
+
+            <div class="notes" style="margin-top:2rem;">
+                <h4>Your Replay Notes (Auto-Saved)</h4>
+                <textarea id="replayNotes" placeholder="Day 23: Overcommitted on 2nd man, no boost for save. Fix: Wait for teammate clear."></textarea>
+                <button class="save-btn" onclick="saveNotes()" style="margin-top:1rem;">Save Notes</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 RL to SSL • Grind. Review. Rank Up. | <a href="#progress">Back to Top</a></p>
+    </footer>
+
+    <script>
+        // Progress + Rank
+        const totalDays = 100;
+        let completedDays = 0, currentRank = "Bronze I", streak = 0;
+
+        function loadProgress() {
+            const saved = localStorage.getItem('rl100Challenge');
+            if (saved) {
+                const data = JSON.parse(saved);
+                completedDays = data.completedDays || 0;
+                currentRank = data.currentRank || "Bronze I";
+                streak = data.streak || 0;
+                document.getElementById('replayNotes').value = data.notes || '';
+            }
+            document.getElementById('rankInput').value = currentRank;
+            updateDisplay(); renderDays();
+        }
+
+        function saveProgress() {
+            const data = { completedDays, currentRank, streak, notes: document.getElementById('replayNotes').value };
+            localStorage.setItem('rl100Challenge', JSON.stringify(data));
+            alert("Progress & Notes Saved!");
+        }
+
+        function resetProgress() {
+            if (confirm("Reset all progress and notes?")) {
+                localStorage.removeItem('rl100Challenge');
+                completedDays = 0; currentRank = "Bronze I"; streak = 0;
+                document.getElementById('replayNotes').value = '';
+                document.getElementById('rankInput').value = currentRank;
+                updateDisplay(); renderDays();
+            }
+        }
+
+        function updateRank() {
+            currentRank = document.getElementById('rankInput').value;
+            document.getElementById('currentRank').textContent = currentRank;
+            saveProgress();
+        }
+
+        function toggleDay(day) {
+            const btn = document.getElementById(`day-${day}`);
+            if (btn.classList.contains('completed')) {
+                btn.classList.remove('completed'); completedDays--;
+                if (day === completedDays + 1) streak = 0;
+            } else {
+                btn.classList.add('completed'); completedDays++;
+                if (day === completedDays) streak++;
+            }
+            updateDisplay(); saveProgress();
+        }
+
+        function renderDays() {
+            const container = document.getElementById('dayTracker'); container.innerHTML = '';
+            for (let i = 1; i <= totalDays; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'day-btn'; btn.id = `day-${i}`; btn.textContent = i;
+                btn.onclick = () => toggleDay(i);
+                if (i <= completedDays) btn.classList.add('completed');
+                if (i === completedDays + 1) btn.classList.add('today');
+                container.appendChild(btn);
+            }
+        }
+
+        function updateDisplay() {
+            const pct = Math.round((completedDays / totalDays) * 100);
+            const fill = document.getElementById('progressFill');
+            fill.style.width = pct + '%'; fill.querySelector('span').textContent = pct + '%';
+            document.getElementById('currentDay').textContent = completedDays + 1;
+            document.getElementById('daysLeft').textContent = totalDays - completedDays;
+            document.getElementById('completedDays').textContent = completedDays;
+            document.getElementById('streakCount').textContent = streak + ' days';
+            document.getElementById('currentRank').textContent = currentRank;
+        }
+
+        function saveNotes() {
+            saveProgress();
+        }
+
+        // Copy Pack Codes
+        document.querySelectorAll('.pack-code').forEach(code => {
+            code.addEventListener('click', () => {
+                navigator.clipboard.writeText(code.textContent);
+                code.style.background = 'rgba(76,175,80,0.3)';
+                setTimeout(() => code.style.background = 'rgba(0,0,0,0.3)', 1000);
+            });
+        });
+
+        window.onload = loadProgress;
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const t = document.querySelector(a.getAttribute('href'));
+                if (t) window.scrollTo({ top: t.offsetTop - 80, behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>
